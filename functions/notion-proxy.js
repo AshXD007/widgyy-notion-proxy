@@ -7,6 +7,11 @@ exports.handler = async function(event, context) {
       body: JSON.stringify({ message: 'Method Not Allowed' })
     };
   }
+  const responseHeaders = {
+    'Access-Control-Allow-Origin': '*', // Replace '*' with your frontend's domain in production
+    'Access-Control-Allow-Methods': 'POST',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
 
   const { b64EncodedKey, authCode, redirectUri } = JSON.parse(event.body);
 
@@ -33,12 +38,14 @@ exports.handler = async function(event, context) {
     const data = await response.json();
     return {
       statusCode: response.status,
+      headers:responseHeaders,
       body: JSON.stringify(data)
     };
   } catch (error) {
     console.error('Error:', error);
     return {
       statusCode: 500,
+      headers:responseHeaders,
       body: JSON.stringify({ error: 'Internal server error' })
     };
   }
