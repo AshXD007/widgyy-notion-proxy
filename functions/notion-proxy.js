@@ -5,7 +5,10 @@ import serverless from 'serverless-http';
 import fetch from 'node-fetch';
 
 const app = express();
-app.use(cors());
+const corsOptions = {
+  origin: ['http://localhost:5173/', 'http://192.168.0.196:5173/'],
+};
+app.use(cors(corsOptions));
 
 app.post('/.netlify/functions/notion-proxy', async (req, res) => {
   if (req.method !== 'POST') {
