@@ -1,19 +1,18 @@
-import fetch from "node-fetch";
 
-exports.handler = async function(event, context) {
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ message: 'Method Not Allowed' })
-    };
+import cors from 'cors'
+import { express } from 'express';
+import serverless from 'serverless-http';
+import fetch from 'node-fetch';
+
+const app = express();
+app.use(cors());
+
+app.post('/.netlify/functions/notion-proxy', async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method Not Allowed' });
   }
-  const responseHeaders = {
-    'Access-Control-Allow-Origin': '*', // Replace '*' with your frontend's domain in production
-    'Access-Control-Allow-Methods': 'POST',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
 
-  const { b64EncodedKey, authCode, redirectUri } = JSON.parse(event.body);
+  const { b64EncodedKey, authCode, redirectUri } = req.body;
 
   const baseUrl = 'https://api.notion.com/v1/oauth/token';
 
@@ -36,17 +35,31 @@ exports.handler = async function(event, context) {
     });
 
     const data = await response.json();
-    return {
-      statusCode: response.status,
-      headers:responseHeaders,
-      body: JSON.stringify(data)
+
+    const responseHeaders = {
+      'Access-Control-Allow-Origin': '*', // Replace '*' with your allowed origin(s)
+      'Access-Control-Allow-Methods': 'POST',
+      'Access-Control-Allow-Headers': 'Content-Type',
     };
+
+    res
+      .status(response.status)
+      .set(responseHeaders)
+      .json(data);
   } catch (error) {
     console.error('Error:', error);
-    return {
-      statusCode: 500,
-      headers:responseHeaders,
-      body: JSON.stringify({ error: 'Internal server error' })
+
+    const responseHeaders = {
+      'Access-Control-Allow-Origin': '*', // Replace '*' with your allowed origin(s)
+      'Access-Control-Allow-Methods': 'POST',
+      'Access-Control-Allow-Headers': 'Content-Type',
     };
+
+    res
+      .status(500)
+      .set(responseHeaders)
+      .json({ error: 'Internal server error' });
   }
-};
+});
+
+module.exports.handler = serverless(app);
